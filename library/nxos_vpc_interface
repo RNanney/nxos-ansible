@@ -102,12 +102,12 @@ options:
         default: false
         choices: [True, False]
         aliases: []
-    platform:
+    model:
         description:
-            - needed to choose commands based off platform
+            - 4 digit model number gathered from facts
         required: false
-        default: n9k
-        choices: ['n9k', 'n3k']
+        default: null
+        choices: []
         aliases: []
 '''
 EXAMPLES = '''
@@ -145,7 +145,7 @@ def main():
             username=dict(type='str'),
             password=dict(type='str'),
             facts=dict(choices=BOOLEANS, default=False, ),
-            platform=dict(choices=['n3k', 'n9k']),
+            model=dict(type='str'),
         ),
         supports_check_mode=True
     )
@@ -161,7 +161,7 @@ def main():
     peer_link = module.params['peer_link']
     state = module.params['state']
     facts = module.params['facts']
-    platform = module.params['platform']
+    model = module.params['model']
 
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
@@ -203,7 +203,7 @@ def main():
                                      + " VPC configured.  Remove it first "
                                      + "before assigning this one",
                                      existing_vpc=vpcid)
-            if nxapi_lib.peer_link_exists(device, platform):
+            if nxapi_lib.peer_link_exists(device, model):
                 active_peer_link = nxapi_lib.get_active_vpc_peer_link(device)
                 if active_peer_link[-2:] == portchannel:
                     module.fail_json(msg="That port channel is the current"

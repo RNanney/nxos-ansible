@@ -77,12 +77,12 @@ options:
         default: http
         choices: ['http', 'https']
         aliases: []
-    platform:
+    model:
         description:
-            - needed to choose commands based off platform
+            - 4 digit model number gathered from facts
         required: false
-        default: n9k
-        choices: ['n9k', 'n3k']
+        default: null
+        choices: []
         aliases: []
 '''
 
@@ -119,7 +119,7 @@ def main():
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
-            platform=dict(choices=['n3k', 'n9k'], default='n9k')
+            model=dict(type='str'),
         ),
         supports_check_mode=True
     )
@@ -132,18 +132,18 @@ def main():
 
     feature = module.params['feature'].lower()
     state = module.params['state'].lower()
-    platform = module.params['platform']
+    model = module.params['model']
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
 
-    avail_features = nxapi_lib.get_feature_list(device, platform)
+    avail_features = nxapi_lib.get_feature_list(device, model)
     if feature not in avail_features:
         module.fail_json(
             msg='Invalid feature name.',
             features_currently_supported=avail_features,
             invalid_feature=feature)
 
-    existing_state = nxapi_lib.feature_enabled(device, feature)
+    existing_state = nxapi_lib.feature_enabled(device, feature, model)
     if existing_state:
         existstate = 'enabled'
     else:
