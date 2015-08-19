@@ -95,6 +95,20 @@ options:
         default: http
         choices: ['http', 'https']
         aliases: []
+    facts:
+        description:
+            - Lets the module know if facts have already been gathered
+        required: false
+        default: false
+        choices: [True, False]
+        aliases: []
+    platform:
+        description:
+            - needed to choose commands based off platform
+        required: false
+        default: n9k
+        choices: ['n9k', 'n3k']
+        aliases: []
 '''
 EXAMPLES = '''
 # config portchannel10 to be the peerlink
@@ -130,6 +144,8 @@ def main():
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
+            facts=dict(choices=BOOLEANS, default=False, ),
+            platform=dict(choices=['n3k', 'n9k']),
         ),
         supports_check_mode=True
     )
@@ -144,6 +160,8 @@ def main():
     vpc = module.params['vpc']
     peer_link = module.params['peer_link']
     state = module.params['state']
+    facts = module.params['facts']
+    platform = module.params['platform']
 
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
@@ -151,9 +169,9 @@ def main():
 
     changed = False
     # args = dict(portchannel=portchannel, vpc=vpc, peer_link=peer_link)
-
-    if not nxapi_lib.feature_enabled(device, 'vpc'):
-        module.fail_json(msg='VPC feature needs to be enabled first')
+    if not facts:
+        if not nxapi_lib.feature_enabled(device, 'vpc'):
+            module.fail_json(msg='VPC feature needs to be enabled first')
     config_value = None
     if state == 'present':
         if vpc and (peer_link or peer_link is False):
@@ -185,7 +203,7 @@ def main():
                                      + " VPC configured.  Remove it first "
                                      + "before assigning this one",
                                      existing_vpc=vpcid)
-            if nxapi_lib.peer_link_exists(device):
+            if nxapi_lib.peer_link_exists(device, platform):
                 active_peer_link = nxapi_lib.get_active_vpc_peer_link(device)
                 if active_peer_link[-2:] == portchannel:
                     module.fail_json(msg="That port channel is the current"

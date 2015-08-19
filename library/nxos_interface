@@ -118,6 +118,13 @@ options:
         default: http
         choices: ['http', 'https']
         aliases: []
+    facts:
+        description:
+            - Lets the module know if facts have already been gathered
+        required: false
+        default: false
+        choices: [True, False]
+        aliases: []
 '''
 
 EXAMPLES = '''
@@ -172,6 +179,7 @@ def main():
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
+            facts=dict(choices=BOOLEANS, default=False, ),
         ),
         supports_check_mode=True
     )
@@ -189,6 +197,7 @@ def main():
     description = module.params['description']
     mode = module.params['mode']
     state = module.params['state']
+    facts = module.params['facts']
 
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
@@ -278,9 +287,10 @@ def main():
         elif interface == 'mgmt0' or interface == 'management0':
             if state == 'absent' or state == 'default':
                 module.fail_json(msg='CANNOT DEFAULT MGMT0- USED BY NXAPI')
-        if intf_type == 'svi' and \
-                not nxapi_lib.feature_enabled(device, 'interface-vlan'):
-            module.fail_json(
+        if not facts:
+            if intf_type == 'svi' and \
+                    not nxapi_lib.feature_enabled(device, 'interface-vlan'):
+                module.fail_json(
                 msg='SVI (interface-vlan) feature needs to be enabled first',
             )
 

@@ -77,6 +77,13 @@ options:
         default: http
         choices: ['http', 'https']
         aliases: []
+    platform:
+        description:
+            - needed to choose commands based off platform
+        required: false
+        default: n9k
+        choices: ['n9k', 'n3k']
+        aliases: []
 '''
 
 EXAMPLES = '''
@@ -112,6 +119,7 @@ def main():
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
+            platform=dict(choices=['n3k', 'n9k'], default='n9k')
         ),
         supports_check_mode=True
     )
@@ -124,11 +132,11 @@ def main():
 
     feature = module.params['feature'].lower()
     state = module.params['state'].lower()
-
+    platform = module.params['platform']
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
 
-    avail_features = nxapi_lib.get_feature_list(device)
+    avail_features = nxapi_lib.get_feature_list(device, platform)
     if feature not in avail_features:
         module.fail_json(
             msg='Invalid feature name.',
