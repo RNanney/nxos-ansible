@@ -123,6 +123,13 @@ options:
         default: http
         choices: ['http', 'https']
         aliases: []
+    model:
+        description:
+            - 4 digit model number gathered from facts
+        required: false
+        default: null
+        choices: []
+        aliases: []
 '''
 
 EXAMPLES = '''
@@ -165,6 +172,7 @@ def main():
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
+            model=dict(type='str'),
         ),
         supports_check_mode=True
     )
@@ -184,6 +192,7 @@ def main():
     vip = module.params['vip']
     auth_type = module.params['auth_type']
     auth_string = module.params['auth_string']
+    model = module.params['model']
 
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
@@ -193,7 +202,7 @@ def main():
                 preempt=preempt, vip=vip, auth_type=auth_type,
                 auth_string=auth_string)
 
-    if not nxapi_lib.feature_enabled(device, 'hsrp'):
+    if not nxapi_lib.feature_enabled(device, 'hsrp', model):
         module.fail_json(msg='HSRP feature needs to be enabled first')
 
     intf_type = nxapi_lib.get_interface_type(interface)
